@@ -1,0 +1,77 @@
+<html>
+
+<head>
+    <title>Activate</title>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/qrcode.min.js"></script>
+    <script>
+        function Reporter() {
+            this.default_interval = 1000 // 1 s
+            this.update_ticket = null
+
+            this.update_status = function () {
+                $.getJSON("/qr_clue", function (data) {
+
+                    if (data.error == 0) {
+                        $("#hint_msg").text(error_msg).fadeOut()
+                        QRCode.toCanvas($('#canvas')[0], data.clue, function (error) {
+                            if (error) console.error(error)
+                            console.log('success!');
+                        })
+
+                        return;
+                    }
+
+                    var error_msg = ""
+
+                    switch (data.error) {
+                        case -3:
+                            error_msg = "The user logs out of his or her account, so the robot is terminated."
+                        case -2:
+                            error_msg = "The bot is dead by accident, please contact with its own!";
+                            break
+                        case -1:
+                            error_msg = "The bot is in the initial state, please be patient."
+                            break
+                        case 1:
+                            error_msg = "The user has activated the bot."
+
+                            if (this.update_ticket != null) {
+                                clearInterval(this.update_ticket)
+
+                            }
+                            break
+
+                        default:
+                            error_msg = "unknow error"
+                            break
+                    }
+
+                    $("#hint_msg").text(error_msg).fadeIn()
+                    var context = $('#canvas')[0].getContext('2d');
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                })
+            }
+            this.start = function () {
+                this.update_ticket = setInterval(this.update_status, this.default_interval)
+            }
+        }
+
+    </script>
+</head>
+
+<body>
+    <h2 id="hint_msg"></h2>
+    <canvas id="canvas" width="320px" height="320px"></canvas>
+
+    <script>
+
+        $(document).ready(function () {
+            var r = new Reporter()
+            r.start()
+        })
+
+    </script>
+</body>
+
+</html>
